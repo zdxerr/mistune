@@ -19,7 +19,6 @@ __all__ = [
     'markdown', 'escape',
 ]
 
-
 def _pure_pattern(regex):
     pattern = regex.pattern
     if pattern.startswith('^'):
@@ -455,6 +454,7 @@ class InlineGrammar(object):
     linebreak = re.compile(r'^ {2,}\n(?!\s*$)')
     strikethrough = re.compile(r'^~~(?=\S)([\s\S]*?\S)~~')
     footnote = re.compile(r'^\[\^([^\]]+)\]')
+    reference = re.compile(r'^\[\@([^\]]+)\]')
     text = re.compile(r'^[\s\S]+?(?=[\\<!\[_*`~]|https?://| {2,}\n|$)')
 
 
@@ -499,7 +499,7 @@ class InlineLexer(object):
         if not features:
             features = [
                 'escape', 'autolink', 'url', 'tag',
-                'footnote', 'link', 'reflink', 'nolink',
+                'footnote', 'reference', 'link', 'reflink', 'nolink',
                 'double_emphasis', 'emphasis', 'code',
                 'linebreak', 'strikethrough', 'text',
             ]
@@ -572,6 +572,10 @@ class InlineLexer(object):
         self.footnote_index += 1
         self.footnotes[key] = self.footnote_index
         return self.renderer.footnote_ref(key, self.footnote_index)
+
+    def output_reference(self, m):
+        key = m.group(1)
+        return self.renderer.reference(key)
 
     def output_link(self, m):
         return self._process_link(m, m.group(2), m.group(3))
@@ -858,6 +862,9 @@ class Renderer(object):
         """
         html = '<div class="footnotes">\n%s<ol>%s</ol>\n</div>\n'
         return html % (self.hrule(), text)
+
+    def reference(self, key):
+        return '<cite class="reference">%s</cite>' % (key, )
 
 
 class Markdown(object):
